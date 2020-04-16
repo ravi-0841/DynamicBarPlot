@@ -2,12 +2,13 @@ import pylab
 import numpy as np
 
 class DynamicPlot(object):
-    def __init__(self, groups=1, items=1, hatch=False):
+    def __init__(self, groups=1, items=1, opacity=1, hatch=False):
         self.groups = groups
         self.items = items
         self.hatch = hatch
+        self.opacity = opacity
         self.font_size = 22
-        self.legend_font = 15
+        self.legend_font = 13
         
         self.colors = ['royalblue', 'cyan', \
                             'orange', 'yellow', 'green']
@@ -50,7 +51,16 @@ class DynamicPlot(object):
         if font_size < 6:
             raise ValueError("Font size should be greater equal 6")
         self._font_size = str(font_size)
-#        self._legend_size = font_size - 3
+        
+    @property
+    def opacity(self):
+        return self._opacity
+    
+    @opacity.setter
+    def opacity(self, opacity):
+        if opacity < 0:
+            raise ValueError("Opacity can not be less than 0")
+        self._opacity = opacity
 
     def plot(self, data, error=None, item_labels=None, \
             group_labels=None, filename=None, title=None):
@@ -66,12 +76,12 @@ class DynamicPlot(object):
             assert len(group_labels)==self.groups, \
                     "Labels should be of length=groups"
 
-        bar_width = 0.5 if self._items==1 else (0.5-0.1*(self._items - 1))
+        bar_width = 0.5 if self._items==1 else 0.85/self._items
 
         pylab.figure()
         
         r0 = np.arange(self.groups)
-        r = [[x + i*bar_width for x in r0] for i in range(1,self.groups)]
+        r = [[x + i*bar_width for x in r0] for i in range(1,self.items)]
         r = [list(r0)] + r
         
         for i in range(self.items):
@@ -80,12 +90,16 @@ class DynamicPlot(object):
             label = item_labels[i] if item_labels is not None else None
             
             if self.hatch:
-                pylab.bar(r[i], data[:,i], width=bar_width, color='black', \
-                    edgecolor='white', yerr=error_vec, hatch=self.hatches[i], \
-                    capsize=6, label=label)
+                pylab.bar(r[i], data[:,i], width=bar_width, 
+                          color='black', 
+                          edgecolor='white', yerr=error_vec, 
+                          hatch=self.hatches[i], 
+                          capsize=6, alpha=self.opacity, label=label)
             else:
-                pylab.bar(r[i], data[:,i], width=bar_width, color=self.colors[i], \
-                        edgecolor='black', yerr=error_vec, capsize=6, label=label)
+                pylab.bar(r[i], data[:,i], width=bar_width, 
+                          color=self.colors[i], edgecolor='black', 
+                          yerr=error_vec, 
+                          alpha=self.opacity, capsize=6, label=label)
 
         pylab.xticks([r + (0.5*(self.items-1))*bar_width \
                       for r in range(self.groups)], group_labels,
@@ -93,7 +107,7 @@ class DynamicPlot(object):
         pylab.yticks(fontweight='bold',fontsize=self.font_size)
         
         if item_labels is not None:
-            pylab.legend(loc=1, prop={'size':self.legend_font, 
+            pylab.legend(loc=2, prop={'size':self.legend_font, 
                                       'weight':'bold'})
         
         if title is not None:
@@ -104,10 +118,10 @@ class DynamicPlot(object):
 
 
 if __name__=="__main__":
-    z = DynamicPlot(groups=3, items=3, hatch=False)
-    data = 5 + 2*np.random.rand(3,3)
-    err = np.random.rand(3,3)
+    z = DynamicPlot(groups=3, items=4, hatch=False)
+    data = 5 + 2*np.random.rand(3,4)
+    err = np.random.rand(3,4)
     
-    z.plot(data, error=err, item_labels=['1','2','3'], 
+    z.plot(data, error=err, item_labels=['1','2','3','4'], 
            group_labels=['g1','g2','g3'], title='Test')
         
